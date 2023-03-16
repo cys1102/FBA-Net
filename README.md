@@ -33,12 +33,12 @@ The dataset used for this project can be downloaded from the following links:
 2. Install the required packages using the command mentioned above
 3. Download the dataset from the link provided above and extract it to the data/ directory
 4. Run the following command to train the model:
-   ```console
+   ```bash
    # e.g. train FBA-Net+ with 20% labeled data on the LA dataset.
    python ./code/train.py --dataset_name LA --model fbapnet --labelnum 16 --gpu 0 --dim 128 --exp FBA_net_plus
    ```
 5. To evaluate the model, run the following command:
-   ```console
+   ```bash
    python ./code/test.py --dataset_name LA --model fbapnet --labelnum 16 --gpu 0 --dim 128 --exp FBA_net_plus
    ```
 
