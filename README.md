@@ -35,12 +35,16 @@ The dataset used for this project can be downloaded from the following links:
 4. Run the following command to train the model:
    ```bash
    # e.g. train FBA-Net+ with 20% labeled data on the LA dataset.
-   python ./code/train.py --dataset_name LA --model fbapnet --labelnum 16 --gpu 0 --dim 128 --exp FBA_net_plus
+   python ./code/train_fba_plus.py --dataset_name LA --model fbapnet --labelnum 16 --gpu 0 --dim 128 --exp FBA_net_plus
    ```
 5. To evaluate the model, run the following command:
    ```bash
    python ./code/test.py --dataset_name LA --model fbapnet --labelnum 16 --gpu 0 --dim 128 --exp FBA_net_plus
    ```
+
+## Pre-trained weights
+
+Pre-trained weights are available at https://tulane.app.box.com/folder/199299424930
 
 ## Results
 
