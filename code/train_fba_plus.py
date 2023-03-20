@@ -33,7 +33,7 @@ parser.add_argument("--exp", type=str, default="fbapnet", help="exp_name")
 parser.add_argument("--model", type=str, default="fbapnet", help="model_name")
 parser.add_argument("--dim", type=int, default=128, help="dim of MLP")
 
-parser.add_argument("--max_iteration", type=int, default=10000, help="maximum iteration to train")
+parser.add_argument("--max_iteration", type=int, default=15000, help="maximum iteration to train")
 parser.add_argument("--max_samples", type=int, default=80, help="maximum samples to train")
 parser.add_argument("--labeled_bs", type=int, default=2, help="batch_size of labeled data per gpu")
 parser.add_argument("--batch_size", type=int, default=4, help="batch_size of labeled data per gpu")
@@ -41,7 +41,7 @@ parser.add_argument("--base_lr", type=float, default=0.01, help="maximum epoch n
 parser.add_argument(
     "--deterministic", type=int, default=1, help="whether use deterministic training"
 )
-parser.add_argument("--labelnum", type=int, default=12, help="trained samples")
+parser.add_argument("--labelnum", type=int, default=16, help="trained samples")
 parser.add_argument("--seed", type=int, default=1337, help="random seed")
 parser.add_argument("--gpu", type=str, default="0", help="GPU to use")
 parser.add_argument("--consistency", type=float, default=1, help="consistency_weight")
@@ -63,7 +63,6 @@ elif args.dataset_name == "Pancreas_CT":
     patch_size = (96, 96, 96)
     args.root_path = args.root_path + "data/Pancreas"
     args.max_samples = 62
-    # args.max_iteration = 4000
 train_data_path = args.root_path
 
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu

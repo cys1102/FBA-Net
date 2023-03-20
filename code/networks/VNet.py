@@ -3,24 +3,24 @@ from torch import nn
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, n_stages, n_filters_in, n_filters_out, normalization='none'):
+    def __init__(self, n_stages, n_filters_in, n_filters_out, normalization="none"):
         super(ConvBlock, self).__init__()
 
         ops = []
         for i in range(n_stages):
-            if i==0:
+            if i == 0:
                 input_channel = n_filters_in
             else:
                 input_channel = n_filters_out
 
             ops.append(nn.Conv3d(input_channel, n_filters_out, 3, padding=1))
-            if normalization == 'batchnorm':
+            if normalization == "batchnorm":
                 ops.append(nn.BatchNorm3d(n_filters_out))
-            elif normalization == 'groupnorm':
+            elif normalization == "groupnorm":
                 ops.append(nn.GroupNorm(num_groups=16, num_channels=n_filters_out))
-            elif normalization == 'instancenorm':
+            elif normalization == "instancenorm":
                 ops.append(nn.InstanceNorm3d(n_filters_out))
-            elif normalization != 'none':
+            elif normalization != "none":
                 assert False
             ops.append(nn.ReLU(inplace=True))
 
@@ -32,7 +32,7 @@ class ConvBlock(nn.Module):
 
 
 class ResidualConvBlock(nn.Module):
-    def __init__(self, n_stages, n_filters_in, n_filters_out, normalization='none'):
+    def __init__(self, n_stages, n_filters_in, n_filters_out, normalization="none"):
         super(ResidualConvBlock, self).__init__()
 
         ops = []
@@ -43,39 +43,39 @@ class ResidualConvBlock(nn.Module):
                 input_channel = n_filters_out
 
             ops.append(nn.Conv3d(input_channel, n_filters_out, 3, padding=1))
-            if normalization == 'batchnorm':
+            if normalization == "batchnorm":
                 ops.append(nn.BatchNorm3d(n_filters_out))
-            elif normalization == 'groupnorm':
+            elif normalization == "groupnorm":
                 ops.append(nn.GroupNorm(num_groups=16, num_channels=n_filters_out))
-            elif normalization == 'instancenorm':
+            elif normalization == "instancenorm":
                 ops.append(nn.InstanceNorm3d(n_filters_out))
-            elif normalization != 'none':
+            elif normalization != "none":
                 assert False
 
-            if i != n_stages-1:
+            if i != n_stages - 1:
                 ops.append(nn.ReLU(inplace=True))
 
         self.conv = nn.Sequential(*ops)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        x = (self.conv(x) + x)
+        x = self.conv(x) + x
         x = self.relu(x)
         return x
 
 
 class DownsamplingConvBlock(nn.Module):
-    def __init__(self, n_filters_in, n_filters_out, stride=2, normalization='none'):
+    def __init__(self, n_filters_in, n_filters_out, stride=2, normalization="none"):
         super(DownsamplingConvBlock, self).__init__()
 
         ops = []
-        if normalization != 'none':
+        if normalization != "none":
             ops.append(nn.Conv3d(n_filters_in, n_filters_out, stride, padding=0, stride=stride))
-            if normalization == 'batchnorm':
+            if normalization == "batchnorm":
                 ops.append(nn.BatchNorm3d(n_filters_out))
-            elif normalization == 'groupnorm':
+            elif normalization == "groupnorm":
                 ops.append(nn.GroupNorm(num_groups=16, num_channels=n_filters_out))
-            elif normalization == 'instancenorm':
+            elif normalization == "instancenorm":
                 ops.append(nn.InstanceNorm3d(n_filters_out))
             else:
                 assert False
@@ -92,12 +92,16 @@ class DownsamplingConvBlock(nn.Module):
 
 
 class Upsampling_function(nn.Module):
-    def __init__(self, n_filters_in, n_filters_out, stride=2, normalization='none', mode_upsampling = 1):
+    def __init__(
+        self, n_filters_in, n_filters_out, stride=2, normalization="none", mode_upsampling=1
+    ):
         super(Upsampling_function, self).__init__()
 
         ops = []
         if mode_upsampling == 0:
-            ops.append(nn.ConvTranspose3d(n_filters_in, n_filters_out, stride, padding=0, stride=stride))
+            ops.append(
+                nn.ConvTranspose3d(n_filters_in, n_filters_out, stride, padding=0, stride=stride)
+            )
         if mode_upsampling == 1:
             ops.append(nn.Upsample(scale_factor=stride, mode="trilinear", align_corners=True))
             ops.append(nn.Conv3d(n_filters_in, n_filters_out, kernel_size=3, padding=1))
@@ -105,13 +109,13 @@ class Upsampling_function(nn.Module):
             ops.append(nn.Upsample(scale_factor=stride, mode="nearest"))
             ops.append(nn.Conv3d(n_filters_in, n_filters_out, kernel_size=3, padding=1))
 
-        if normalization == 'batchnorm':
+        if normalization == "batchnorm":
             ops.append(nn.BatchNorm3d(n_filters_out))
-        elif normalization == 'groupnorm':
+        elif normalization == "groupnorm":
             ops.append(nn.GroupNorm(num_groups=16, num_channels=n_filters_out))
-        elif normalization == 'instancenorm':
+        elif normalization == "instancenorm":
             ops.append(nn.InstanceNorm3d(n_filters_out))
-        elif normalization != 'none':
+        elif normalization != "none":
             assert False
         ops.append(nn.ReLU(inplace=True))
 
@@ -120,27 +124,44 @@ class Upsampling_function(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return x
-    
+
+
 class Encoder(nn.Module):
-    def __init__(self, n_channels=3, n_classes=2, n_filters=16, normalization='none', has_dropout=False, has_residual=False):
+    def __init__(
+        self,
+        n_channels=3,
+        n_classes=2,
+        n_filters=16,
+        normalization="none",
+        has_dropout=False,
+        has_residual=False,
+    ):
         super(Encoder, self).__init__()
         self.has_dropout = has_dropout
         convBlock = ConvBlock if not has_residual else ResidualConvBlock
 
         self.block_one = convBlock(1, n_channels, n_filters, normalization=normalization)
-        self.block_one_dw = DownsamplingConvBlock(n_filters, 2 * n_filters, normalization=normalization)
+        self.block_one_dw = DownsamplingConvBlock(
+            n_filters, 2 * n_filters, normalization=normalization
+        )
 
         self.block_two = convBlock(2, n_filters * 2, n_filters * 2, normalization=normalization)
-        self.block_two_dw = DownsamplingConvBlock(n_filters * 2, n_filters * 4, normalization=normalization)
+        self.block_two_dw = DownsamplingConvBlock(
+            n_filters * 2, n_filters * 4, normalization=normalization
+        )
 
         self.block_three = convBlock(3, n_filters * 4, n_filters * 4, normalization=normalization)
-        self.block_three_dw = DownsamplingConvBlock(n_filters * 4, n_filters * 8, normalization=normalization)
+        self.block_three_dw = DownsamplingConvBlock(
+            n_filters * 4, n_filters * 8, normalization=normalization
+        )
 
         self.block_four = convBlock(3, n_filters * 8, n_filters * 8, normalization=normalization)
-        self.block_four_dw = DownsamplingConvBlock(n_filters * 8, n_filters * 16, normalization=normalization)
+        self.block_four_dw = DownsamplingConvBlock(
+            n_filters * 8, n_filters * 16, normalization=normalization
+        )
 
         self.block_five = convBlock(3, n_filters * 16, n_filters * 16, normalization=normalization)
-        
+
         self.dropout = nn.Dropout3d(p=0.5, inplace=False)
 
     def forward(self, input):
@@ -163,25 +184,44 @@ class Encoder(nn.Module):
 
         res = [x1, x2, x3, x4, x5]
         return res
-    
-    
+
+
 class Decoder(nn.Module):
-    def __init__(self, n_channels=3, n_classes=2, n_filters=16, normalization='none', has_dropout=False, has_residual=False, up_type=0, dim=128, dataset='LA'):
+    def __init__(
+        self,
+        n_channels=3,
+        n_classes=2,
+        n_filters=16,
+        normalization="none",
+        has_dropout=False,
+        has_residual=False,
+        up_type=0,
+        dim=128,
+        dataset="LA",
+    ):
         super(Decoder, self).__init__()
         self.has_dropout = has_dropout
 
         convBlock = ConvBlock if not has_residual else ResidualConvBlock
 
-        self.block_five_up = Upsampling_function(n_filters * 16, n_filters * 8, normalization=normalization, mode_upsampling=up_type)
+        self.block_five_up = Upsampling_function(
+            n_filters * 16, n_filters * 8, normalization=normalization, mode_upsampling=up_type
+        )
 
         self.block_six = convBlock(3, n_filters * 8, n_filters * 8, normalization=normalization)
-        self.block_six_up = Upsampling_function(n_filters * 8, n_filters * 4, normalization=normalization, mode_upsampling=up_type)
+        self.block_six_up = Upsampling_function(
+            n_filters * 8, n_filters * 4, normalization=normalization, mode_upsampling=up_type
+        )
 
         self.block_seven = convBlock(3, n_filters * 4, n_filters * 4, normalization=normalization)
-        self.block_seven_up = Upsampling_function(n_filters * 4, n_filters * 2, normalization=normalization, mode_upsampling=up_type)
+        self.block_seven_up = Upsampling_function(
+            n_filters * 4, n_filters * 2, normalization=normalization, mode_upsampling=up_type
+        )
 
         self.block_eight = convBlock(2, n_filters * 2, n_filters * 2, normalization=normalization)
-        self.block_eight_up = Upsampling_function(n_filters * 2, n_filters, normalization=normalization, mode_upsampling=up_type)
+        self.block_eight_up = Upsampling_function(
+            n_filters * 2, n_filters, normalization=normalization, mode_upsampling=up_type
+        )
 
         self.block_nine = convBlock(1, n_filters, n_filters, normalization=normalization)
         self.out_conv = nn.Conv3d(n_filters, n_classes, 1, padding=0)
@@ -190,13 +230,12 @@ class Decoder(nn.Module):
         self.cm = ContraModule(n_classes)
 
         if dataset == "LA":
-            self.f_mlp = nn.Sequential(nn.Linear(56 * 56 * 40, 128), nn.ReLU())
-            self.b_mlp = nn.Sequential(nn.Linear(56 * 56 * 40, 128), nn.ReLU())
+            self.f_mlp = nn.Sequential(nn.Linear(56 * 56 * 40, dim), nn.ReLU())
+            self.b_mlp = nn.Sequential(nn.Linear(56 * 56 * 40, dim), nn.ReLU())
+
         elif dataset == "Pancreas_CT":
-            self.f_mlp = nn.Sequential(nn.Linear(48*48*48, dim), nn.ReLU())
-            self.b_mlp = nn.Sequential(nn.Linear(48*48*48, dim), nn.ReLU())
-
-
+            self.f_mlp = nn.Sequential(nn.Linear(48 * 48 * 48, dim), nn.ReLU())
+            self.b_mlp = nn.Sequential(nn.Linear(48 * 48 * 48, dim), nn.ReLU())
 
     def forward(self, features):
         x1 = features[0]
@@ -204,7 +243,7 @@ class Decoder(nn.Module):
         x3 = features[2]
         x4 = features[3]
         x5 = features[4]
-        
+
         x5_up = self.block_five_up(x5)
         x5_up = x5_up + x4
 
@@ -227,14 +266,27 @@ class Decoder(nn.Module):
         fg_feats = self.f_mlp(fg_feats)
         bg_feats = self.b_mlp(bg_feats)
         return fg_feats, bg_feats, out_seg
- 
+
+
 class VNet(nn.Module):
-    def __init__(self, n_channels=3, n_classes=2, n_filters=16, normalization='none', has_dropout=False, has_residual=False):
+    def __init__(
+        self,
+        n_channels=3,
+        n_classes=2,
+        n_filters=16,
+        normalization="none",
+        has_dropout=False,
+        has_residual=False,
+    ):
         super(VNet, self).__init__()
 
-        self.encoder = Encoder(n_channels, n_classes, n_filters, normalization, has_dropout, has_residual)
-        self.decoder1 = Decoder(n_channels, n_classes, n_filters, normalization, has_dropout, has_residual, 0)
-    
+        self.encoder = Encoder(
+            n_channels, n_classes, n_filters, normalization, has_dropout, has_residual
+        )
+        self.decoder1 = Decoder(
+            n_channels, n_classes, n_filters, normalization, has_dropout, has_residual, 0
+        )
+
     def forward(self, input):
         features = self.encoder(input)
         out_seg1 = self.decoder1(features)
@@ -251,7 +303,7 @@ class ContraModule(nn.Module):
     def forward(self, x):
         # x: feature maps (output of U-Net)
         ccam = torch.sigmoid(self.bn_head(self.activation_head(x)))
-        N, C, H, W, Z = ccam.size()
+        N, _, H, W, Z = ccam.size()
 
         ccam_ = ccam.reshape(N, 1, H * W * Z)  # [N, 1, H*W*Z]
         fg_feats = ccam_ / (H * W * Z)  # [N, 1, H*W*Z]
@@ -259,48 +311,122 @@ class ContraModule(nn.Module):
 
         return fg_feats.reshape(x.size(0), -1), bg_feats.reshape(x.size(0), -1)
 
+
 class FBAPnet(nn.Module):
-    def __init__(self, n_channels=3, n_classes=2, n_filters=16, normalization='none', has_dropout=False,
-                 has_residual=False, dim=256, dataset='LA'):
+    def __init__(
+        self,
+        n_channels=3,
+        n_classes=2,
+        n_filters=16,
+        normalization="none",
+        has_dropout=False,
+        has_residual=False,
+        dim=256,
+        dataset="LA",
+    ):
         super(FBAPnet, self).__init__()
 
-        self.encoder = Encoder(n_channels, n_classes, n_filters, normalization, has_dropout, has_residual)
-        self.decoder1 = Decoder(n_channels, n_classes, n_filters, normalization, has_dropout, has_residual, 0, dim, dataset)
-        self.decoder2 = Decoder(n_channels, n_classes, n_filters, normalization, has_dropout, has_residual, 1, dim, dataset)
-        self.decoder3 = Decoder(n_channels, n_classes, n_filters, normalization, has_dropout, has_residual, 2, dim, dataset)
+        self.encoder = Encoder(
+            n_channels, n_classes, n_filters, normalization, has_dropout, has_residual
+        )
+        self.decoder1 = Decoder(
+            n_channels,
+            n_classes,
+            n_filters,
+            normalization,
+            has_dropout,
+            has_residual,
+            0,
+            dim,
+            dataset,
+        )
+        self.decoder2 = Decoder(
+            n_channels,
+            n_classes,
+            n_filters,
+            normalization,
+            has_dropout,
+            has_residual,
+            1,
+            dim,
+            dataset,
+        )
+        self.decoder3 = Decoder(
+            n_channels,
+            n_classes,
+            n_filters,
+            normalization,
+            has_dropout,
+            has_residual,
+            2,
+            dim,
+            dataset,
+        )
 
     def forward(self, input):
         features = self.encoder(input)
         fg_feats1, bg_feats1, out_seg1 = self.decoder1(features)
         fg_feats2, bg_feats2, out_seg2 = self.decoder2(features)
         fg_feats3, bg_feats3, out_seg3 = self.decoder3(features)
-        return [fg_feats1, fg_feats2, fg_feats3], [bg_feats1, bg_feats2, bg_feats3], [out_seg1, out_seg2, out_seg3]
+        return (
+            [fg_feats1, fg_feats2, fg_feats3],
+            [bg_feats1, bg_feats2, bg_feats3],
+            [out_seg1, out_seg2, out_seg3],
+        )
+
 
 class FBAnet(nn.Module):
-    def __init__(self, n_channels=3, n_classes=2, n_filters=16, normalization='none', has_dropout=False,
-                 has_residual=False, dim=256, dataset='LA'):
+    def __init__(
+        self,
+        n_channels=3,
+        n_classes=2,
+        n_filters=16,
+        normalization="none",
+        has_dropout=False,
+        has_residual=False,
+        dim=256,
+        dataset="LA",
+    ):
         super(FBAnet, self).__init__()
 
-        self.encoder = Encoder(n_channels, n_classes, n_filters, normalization, has_dropout, has_residual)
-        self.decoder = Decoder(n_channels, n_classes, n_filters, normalization, has_dropout, has_residual, 0, dim, dataset)
+        self.encoder = Encoder(
+            n_channels, n_classes, n_filters, normalization, has_dropout, has_residual
+        )
+        self.decoder = Decoder(
+            n_channels,
+            n_classes,
+            n_filters,
+            normalization,
+            has_dropout,
+            has_residual,
+            0,
+            dim,
+            dataset,
+        )
 
     def forward(self, input):
         features = self.encoder(input)
         fg_feats, bg_feats, out_seg = self.decoder(features)
         return fg_feats, bg_feats, out_seg
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # compute FLOPS & PARAMETERS
     from ptflops import get_model_complexity_info
-    model = VNet(n_channels=1, n_classes=2, normalization='batchnorm', has_dropout=False)
+
+    model = VNet(n_channels=1, n_classes=2, normalization="batchnorm", has_dropout=False)
     with torch.cuda.device(0):
-      macs, params = get_model_complexity_info(model, (1, 112, 112, 80), as_strings=True,
-                                               print_per_layer_stat=True, verbose=True)
-      print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
-      print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+        macs, params = get_model_complexity_info(
+            model, (1, 112, 112, 80), as_strings=True, print_per_layer_stat=True, verbose=True
+        )
+        print("{:<30}  {:<8}".format("Computational complexity: ", macs))
+        print("{:<30}  {:<8}".format("Number of parameters: ", params))
     with torch.cuda.device(0):
-      macs, params = get_model_complexity_info(model, (1, 96, 96, 96), as_strings=True,
-                                               print_per_layer_stat=True, verbose=True)
-      print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
-      print('{:<30}  {:<8}'.format('Number of parameters: ', params))
-    import ipdb; ipdb.set_trace()
+        macs, params = get_model_complexity_info(
+            model, (1, 96, 96, 96), as_strings=True, print_per_layer_stat=True, verbose=True
+        )
+        print("{:<30}  {:<8}".format("Computational complexity: ", macs))
+        print("{:<30}  {:<8}".format("Number of parameters: ", params))
+    import ipdb
+
+    ipdb.set_trace()
