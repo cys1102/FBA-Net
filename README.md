@@ -26,6 +26,7 @@ The dataset used for this project can be downloaded from the following links:
 
 - https://www.cardiacatlas.org/atriaseg2018-challenge/
 - https://wiki.cancerimagingarchive.net/display/Public/Pancreas-CT
+- https://www.creatis.insa-lyon.fr/Challenge/acdc/databases.html
 
 ## How to train
 
