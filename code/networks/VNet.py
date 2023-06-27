@@ -312,7 +312,7 @@ class ContraModule(nn.Module):
         return fg_feats.reshape(x.size(0), -1), bg_feats.reshape(x.size(0), -1)
 
 
-class FBAPnet(nn.Module):
+class FBAnet(nn.Module):
     def __init__(
         self,
         n_channels=3,
@@ -324,7 +324,7 @@ class FBAPnet(nn.Module):
         dim=256,
         dataset="LA",
     ):
-        super(FBAPnet, self).__init__()
+        super(FBAnet, self).__init__()
 
         self.encoder = Encoder(
             n_channels, n_classes, n_filters, normalization, has_dropout, has_residual
@@ -375,58 +375,3 @@ class FBAPnet(nn.Module):
         )
 
 
-class FBAnet(nn.Module):
-    def __init__(
-        self,
-        n_channels=3,
-        n_classes=2,
-        n_filters=16,
-        normalization="none",
-        has_dropout=False,
-        has_residual=False,
-        dim=256,
-        dataset="LA",
-    ):
-        super(FBAnet, self).__init__()
-
-        self.encoder = Encoder(
-            n_channels, n_classes, n_filters, normalization, has_dropout, has_residual
-        )
-        self.decoder = Decoder(
-            n_channels,
-            n_classes,
-            n_filters,
-            normalization,
-            has_dropout,
-            has_residual,
-            0,
-            dim,
-            dataset,
-        )
-
-    def forward(self, input):
-        features = self.encoder(input)
-        fg_feats, bg_feats, out_seg = self.decoder(features)
-        return fg_feats, bg_feats, out_seg
-
-
-if __name__ == "__main__":
-    # compute FLOPS & PARAMETERS
-    from ptflops import get_model_complexity_info
-
-    model = VNet(n_channels=1, n_classes=2, normalization="batchnorm", has_dropout=False)
-    with torch.cuda.device(0):
-        macs, params = get_model_complexity_info(
-            model, (1, 112, 112, 80), as_strings=True, print_per_layer_stat=True, verbose=True
-        )
-        print("{:<30}  {:<8}".format("Computational complexity: ", macs))
-        print("{:<30}  {:<8}".format("Number of parameters: ", params))
-    with torch.cuda.device(0):
-        macs, params = get_model_complexity_info(
-            model, (1, 96, 96, 96), as_strings=True, print_per_layer_stat=True, verbose=True
-        )
-        print("{:<30}  {:<8}".format("Computational complexity: ", macs))
-        print("{:<30}  {:<8}".format("Number of parameters: ", params))
-    import ipdb
-
-    ipdb.set_trace()
