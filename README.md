@@ -45,7 +45,7 @@ The dataset used for this project can be downloaded from the following links:
 
 ## Pre-trained weights
 
-Pre-trained weights are available at https://tulane.app.box.com/folder/199299424930
+Pre-trained weights are available at [https://tulane.app.box.com/folder/199299424930](https://tulane.box.com/s/ay28t61b8gn2djj3ndyaihlncd4ym2a8)
 
 
 ### Acknowledgment
